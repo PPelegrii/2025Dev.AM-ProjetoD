@@ -43,11 +43,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.pinlikest.data.AppDatabase.Companion.getDatabase
-import com.example.pinlikest.data.Mensagem
-import com.example.pinlikest.data.botaoAlerta
+import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.AM.pinlikest.data.local.Mensagem
+import dev.AM.pinlikest.data.local.Pin
+import dev.AM.pinlikest.data.local.botaoAlerta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,7 +67,7 @@ fun MessagesScreen(
     val db = getDatabase(dbcontext)
     val mensagensDao = db.mensagensDAO()
 
-    var mensagens by remember { mutableStateOf<List<Mensagem>>(emptyList()) }
+    var mensagens by remember { mutableStateOf(emptyFlow<List<Mensagem>>()) }
 
     LaunchedEffect(Unit) {
         mensagens = buscarMensagens(mensagensDao)
@@ -171,15 +174,15 @@ fun MessagesScreen(
                             .padding(4.dp),
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        mensagens.forEach { mensagem ->
+                        /*mensagens.forEach { mensagem ->
                             MensagemTemplate(context, mensagem) {
                                 onClickMessageDetails(mensagem)
-                        }
-                            Log.d("mensagem", "$mensagem")
+                        }*/
+                         //   Log.d("mensagem", "$mensagem")
                         }
                     }
                 }
-            }
+            //}
         }
     )
 }

@@ -61,6 +61,7 @@ import dev.AM.pinlikest.data.local.Pin
 import dev.AM.pinlikest.data.local.PinsDAO
 import dev.AM.pinlikest.data.local.botaoAlerta
 import dev.AM.pinlikest.ui.pins.buscarPins
+import kotlinx.coroutines.flow.emptyFlow
 
 class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,10 +85,10 @@ fun HomeScreen(
     val db = getDatabase(context)
     val pinsDao = db.pinsDAO()
 
-    var pins by remember { mutableStateOf(emptyList<Pin>()) }
+    var pins by remember { mutableStateOf(emptyFlow<List<Pin>>()) }
 
     LaunchedEffect(Unit) {
-        pins = buscarPins(pinsDao).shuffled()
+        pins = buscarPins(pinsDao)
         Log.d("Busca ok", "... $pins")
     }
     Scaffold(
@@ -175,10 +176,10 @@ fun HomeScreen(
                                 .padding(4.dp),
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            pins.filterIndexed { index, _ -> index % 2 == 0 }
+                            /*pins.filterIndexed { index, _ -> index % 2 == 0 }
                                 .forEach { pin ->
                                     PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
-                                }
+                                }*/
                         }
                         Column(
                             Modifier
@@ -186,10 +187,10 @@ fun HomeScreen(
                                 .padding(4.dp),
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            pins.filterIndexed { index, _ -> index % 2 != 0 }
+                            /*pins.filterIndexed { index, _ -> index % 2 != 0 }
                                 .forEach { pin ->
                                     PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
-                                }
+                                }*/
                         }
                     }
                 }
@@ -222,8 +223,7 @@ fun PinHomeTemplate(
     ) {
         PinImage(
             pinImage = pin.image,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,

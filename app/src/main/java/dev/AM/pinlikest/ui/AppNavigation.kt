@@ -15,8 +15,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.pinlikest.data.AppDatabase
-import com.example.pinlikest.data.Mensagem
+import dev.AM.pinlikest.data.local.AppDatabase
+import dev.AM.pinlikest.data.local.Mensagem
 import dev.AM.pinlikest.ui.mensagens.MensagemDetailsScreen
 import dev.AM.pinlikest.ui.mensagens.MessagesCreateScreen
 import dev.AM.pinlikest.ui.mensagens.MessagesScreen
@@ -130,7 +130,7 @@ fun AppNavigation() {
             var mensagem by remember { mutableStateOf<Mensagem?>(null) }
 
             LaunchedEffect(mensagemId) {
-                mensagem = mensagensDao.buscarTodos().find { it.id == mensagemId }
+                //mensagem = mensagensDao.buscarTodos().collect() { mensagem.id == mensagemId }
             }
 
                 MensagemDetailsScreen(

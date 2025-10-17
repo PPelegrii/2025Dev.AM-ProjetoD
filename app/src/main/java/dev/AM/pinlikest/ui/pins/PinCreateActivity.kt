@@ -51,15 +51,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.pinlikest.data.AppDatabase.Companion.getDatabase
-import com.example.pinlikest.data.Pin
-import com.example.pinlikest.data.PinsDAO
-import com.example.pinlikest.data.botaoAlerta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import coil.compose.AsyncImage
+import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.AM.pinlikest.data.local.Pin
+import dev.AM.pinlikest.data.local.PinsDAO
+import dev.AM.pinlikest.data.local.botaoAlerta
 import dev.AM.pinlikest.ui.AppNavigation
+import dev.AM.pinlikest.ui.PinImage
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 class PinCreateActivity : ComponentActivity() {
     private lateinit var imageUri: MutableState<String?>
@@ -89,7 +91,7 @@ fun PinCreate(
     val db = getDatabase(dbcontext)
     val pinsDao = db.pinsDAO()
 
-    var pins by remember { mutableStateOf(emptyList<Pin>()) }
+    var pins by remember { mutableStateOf(emptyFlow<List<Pin>>()) }
 
     LaunchedEffect(Unit) {
         pins = buscarPins(pinsDao)
@@ -231,11 +233,9 @@ fun PinCreateTemplate(
                     .padding(2.dp)
                     .fillMaxWidth()
             ) {
-                AsyncImage(
-                    model = pin.image,
-                    contentDescription = "",
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                PinImage(
+                    pinImage = pin.image,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Text(pin.pinNome)
                 Text(pin.pinCriador)
@@ -352,12 +352,12 @@ suspend fun criarPin(
         Log.e("Erro ao adicionar", "Msg: ${e.message}")
     }
 }
-suspend fun buscarPins(pinsDao: PinsDAO): List<Pin> {
+suspend fun buscarPins(pinsDao: PinsDAO): Flow<List<Pin>> {
     return try {
         pinsDao.buscarTodos()
     } catch (e: Exception) {
         Log.e("Erro ao buscar", "${e.message}")
-        emptyList()
+        emptyFlow()
     }
 }
 suspend fun deletarPin(

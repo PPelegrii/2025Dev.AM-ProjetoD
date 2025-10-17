@@ -34,9 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.pinlikest.data.AppDatabase.Companion.getDatabase
-import com.example.pinlikest.data.Pin
-import com.example.pinlikest.data.botaoAlerta
+import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.AM.pinlikest.data.local.Pin
+import dev.AM.pinlikest.data.local.botaoAlerta
 import dev.AM.pinlikest.ui.AppNavigation
 import dev.AM.pinlikest.ui.PinImage
 import dev.AM.pinlikest.ui.darLikePin
@@ -66,7 +66,7 @@ fun PinDetails(
     val db = getDatabase(context)
     val pinsDao = db.pinsDAO()
 
-    var pin by remember { mutableStateOf<Pin?>(null) }
+    val pin by remember { mutableStateOf<Pin?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.primaryContainer,

@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.AM.pinlikest.data.local.AppDatabase
 import dev.AM.pinlikest.data.local.Pin
+import dev.AM.pinlikest.ui.theme.Typography
 import dev.pinlikest.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,11 +54,11 @@ fun TelaLogo(toHome: () -> Unit) {
 
     LaunchedEffect(Unit) {
         val pins = pinsDao.buscarTodos()
-        if(pins.isEmpty()){
+        /*if(pins.isEmpty()){
             CoroutineScope(Dispatchers.IO).launch{
                 pinsDao.insertPins(pinIniciais())
             }
-        }
+        }*/
 
         db.mensagensDAO().buscarTodos()
         delay(1.seconds)

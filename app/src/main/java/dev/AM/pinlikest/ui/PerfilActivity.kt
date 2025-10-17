@@ -180,9 +180,9 @@ fun PerfilScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text("Seus Pins salvos apareceram abaixo:")
-                            if (pin.pinIsSaved) {
+                            /*if (pin.pinIsSaved) {
                                 PinHomeTemplate(context, pin) { pinDetails(pin) }
-                            }
+                            }*/
                         }
                     }
                 }

@@ -37,14 +37,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.pinlikest.data.AppDatabase.Companion.getDatabase
-import com.example.pinlikest.data.Mensagem
-import com.example.pinlikest.data.MensagensDAO
-import com.example.pinlikest.data.botaoAlerta
+import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.AM.pinlikest.data.local.Mensagem
+import dev.AM.pinlikest.data.local.MensagensDAO
+import dev.AM.pinlikest.data.local.botaoAlerta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +60,7 @@ fun MessagesCreateScreen(
     val db = getDatabase(context)
     val mensagensDao = db.mensagensDAO()
 
-    var mensagens by remember { mutableStateOf<List<Mensagem>>(emptyList()) }
+    var mensagens by remember { mutableStateOf(emptyFlow<List<Mensagem>>()) }
 
     LaunchedEffect(Unit) {
         mensagens = buscarMensagens(mensagensDao)
@@ -264,12 +265,12 @@ suspend fun inserirMensagem(
         Log.e("Erro ao adicionar", "Msg: ${e.message}")
     }
 }
-suspend fun buscarMensagens(mensagensDao: MensagensDAO): List<Mensagem> {
+suspend fun buscarMensagens(mensagensDao: MensagensDAO): Flow<List<Mensagem>> {
     return try {
         mensagensDao.buscarTodos()
     } catch (e: Exception) {
         Log.e("Erro ao buscar", "${e.message}")
-        emptyList()
+        emptyFlow()
     }
 }
 suspend fun deletarMensagem(
