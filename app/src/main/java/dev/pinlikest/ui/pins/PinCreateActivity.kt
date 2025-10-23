@@ -42,7 +42,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +52,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.pinlikest.data.local.AppDatabase
 import dev.pinlikest.ui.AppNavigation
 import dev.pinlikest.ui.PinImage
 import kotlinx.coroutines.CoroutineScope
@@ -61,14 +59,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
 import dev.pinlikest.data.local.Pin
-import dev.pinlikest.data.local.PinsDAO
 import dev.pinlikest.data.local.botaoAlerta
 import dev.pinlikest.data.repository.PinsRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 
 class PinCreateActivity : ComponentActivity() {
-    private lateinit var imageUri: MutableState<String?>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,20 +90,8 @@ fun PinCreate(
             PinsRepository(getDatabase(LocalContext.current).pinsDAO())
         )
     )
-
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(Unit) {
-        viewModel.buscarPins()
-        Log.d("Busca ok", "Busca ok")
-    }
-    /*
-    val dbcontext = LocalContext.current
-    val db = getDatabase(dbcontext)
-
-    var pins by remember { mutableStateOf(emptyFlow<List<Pin>>()) }
-    */
 
     Scaffold(
         topBar = {
@@ -155,45 +137,21 @@ fun PinCreate(
                         toHome()
                         Log.d("botaoHome", "usuario-clicouHome_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Home,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.Home, "", Modifier.size(30.dp))
                     }
-                    /*IconButton(onClick = {
-                        Log.d("botaoSearch", "usuario-clicouSearch_route")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }*/
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "",
-                        modifier = Modifier.size(30.dp)
+                    Icon(Icons.Filled.Add, "", Modifier.size(30.dp)
                     )
                     IconButton(onClick = {
                         toMessages()
                         Log.d("botaoMessages", "usuario-clicouMessages_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MailOutline,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.MailOutline, "", Modifier.size(30.dp))
                     }
                     IconButton(onClick = {
                         toProfile()
                         Log.d("botaoUserProfile", "usuario-clicouUserProfile_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.AccountCircle, "", Modifier.size(30.dp))
                     }
                 }
             }
@@ -213,11 +171,7 @@ fun PinCreate(
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PinCreateTemplate(
-    context: Context,
-    pin: Pin,
-) {
-
+fun PinCreateTemplate(pin: Pin) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -250,7 +204,9 @@ fun PinCreateTemplate(
                     pinImage = pin.image,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text(pin.pinNome)
+                if(pin.pinNome.isEmpty()){
+                    Text(pin.pinNome)
+                }
                 Text(pin.pinCriador)
             }
         }
@@ -262,12 +218,17 @@ fun PinCreateTemplate(
 fun PinController(
     context: Context,
     onPickImage: () -> Unit,
-    imageUri: String?
-) {
-    val db = getDatabase(context)
-    val pinsDao = db.pinsDAO()
+    imageUri: String?,
 
-    var image by remember { mutableStateOf("") }
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+
     var nome by remember { mutableStateOf("") }
     var criador by remember { mutableStateOf("") }
 
@@ -293,8 +254,7 @@ fun PinController(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick =
-                        onPickImage
+                    onClick = onPickImage
                 ) {
                     Text("Escolher imagem")
                 }
@@ -313,7 +273,7 @@ fun PinController(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text("Prévia do Pin:")
-                PinCreateTemplate(context, pinPreview)
+                PinCreateTemplate( pinPreview)
 
                 Button(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -321,18 +281,15 @@ fun PinController(
                     onClick = {
                         if (!imageUri.isNullOrBlank() && nome.isNotBlank()) {
                             CoroutineScope(Dispatchers.IO).launch {
-                                criarPin(
-                                    context,
+                                viewModel.criarPin(
                                     imageUri,
                                     nome,
                                     criador,
-                                    pinsDao
                                 )
                             }
                             botaoAlerta(context, "Pin adicionado :)")
                             Log.d("addPin", "pinAdicionado")
 
-                            image = ""
                             nome = ""
                             criador = ""
                         }
@@ -340,61 +297,5 @@ fun PinController(
                 ) { Text("Adicionar Pin!") }
             }
         }
-    }
-}
-suspend fun criarPin(
-    context: Context,
-
-    imagemPin: String?,
-    nomePin: String,
-    criadorPin: String,
-    pinsDao: PinsDAO
-) {
-    try{
-        pinsDao.inserir(
-            Pin(
-                image = imagemPin,
-                pinNome = nomePin,
-                pinCriador = criadorPin,
-                pinTopComentario = "",
-                pinIsLiked = false,
-                pinIsSaved = false,
-            )
-        )
-    }catch (e: Exception){
-        Log.e("Erro ao adicionar", "Msg: ${e.message}")
-    }
-}
-suspend fun buscarPins(pinsDao: PinsDAO): Flow<List<Pin>> {
-    return try {
-        pinsDao.buscarTodos()
-    } catch (e: Exception) {
-        Log.e("Erro ao buscar", "${e.message}")
-        emptyFlow()
-    }
-}
-suspend fun deletarPin(
-    context: Context,
-
-    id: Int,
-    imagemPin: String?,
-    nomePin: String,
-    criadorPin: String,
-    pinsDao: PinsDAO
-) {
-    try{
-        pinsDao.deletar(
-            Pin(
-                id,
-                imagemPin,
-                nomePin,
-                criadorPin,
-                pinTopComentario = "",
-                pinIsLiked = false,
-                pinIsSaved = false,
-            )
-        )
-    }catch (e: Exception){
-        Log.e("Erro ao remover", "Msg: ${e.message}")
     }
 }

@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,8 +14,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import dev.pinlikest.MainActivity
-import dev.pinlikest.data.local.AppDatabase
 import dev.pinlikest.data.local.Mensagem
 import dev.pinlikest.ui.mensagens.MensagemDetailsScreen
 import dev.pinlikest.ui.mensagens.MessagesCreateScreen
@@ -30,9 +27,6 @@ fun AppNavigation() {
 
     NavHost(navController, startDestination = "TelaLogo") {
 
-        composable("MainActivity") {
-            MainActivity()
-        }
         composable("TelaLogo") {
             TelaLogo(
                 toHome = { navController.navigate("HomeScreen") }
@@ -100,15 +94,13 @@ fun AppNavigation() {
         }
         composable("MessagesScreen") {
             MessagesScreen(
-                context = navController.context,
-
                 toHome = { navController.popBackStack("HomeScreen", false) },
                 toPinCreate = { navController.navigate("PinCreate") },
                 toMessageCreate = { navController.navigate("MessagesCreate") },
                 toProfile = { navController.navigate("PerfilScreen") },
                 onClickMessageDetails = { mensagem ->
                     navController.navigate("MensagemDetails/${mensagem.id}")
-                }
+                },
             )
         }
         composable("MessagesCreate") {
@@ -127,15 +119,8 @@ fun AppNavigation() {
                 navArgument("mensagemId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            val mensagemId = backStackEntry.arguments?.getInt("mensagemId") ?: -1
             val context = LocalContext.current
-            val db = AppDatabase.getDatabase(context)
-            val mensagensDao = db.mensagensDAO()
             var mensagem by remember { mutableStateOf<Mensagem?>(null) }
-
-            LaunchedEffect(mensagemId) {
-                //mensagem = mensagensDao.buscarTodos().collect() { mensagem.id == mensagemId }
-            }
 
                 MensagemDetailsScreen(
                     context,
@@ -165,8 +150,9 @@ fun AppNavigation() {
                 pinImg,
                 pinNome,
                 pinCriador,
-                pinTopComentario
-            ) { navController.popBackStack() }
+                pinTopComentario,
+                { navController.popBackStack() }
+            )
         }
     }
 }

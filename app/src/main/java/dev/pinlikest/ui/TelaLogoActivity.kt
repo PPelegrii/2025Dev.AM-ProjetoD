@@ -1,5 +1,6 @@
 package dev.pinlikest.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -21,16 +22,24 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pinlikest.R
-import dev.pinlikest.data.local.AppDatabase
+import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
 import dev.pinlikest.data.local.Pin
+import dev.pinlikest.data.repository.PinsRepository
+import dev.pinlikest.ui.pins.PinsViewModel
 import dev.pinlikest.ui.theme.Typography
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 class TelaLogoActivity : ComponentActivity() {
@@ -42,24 +51,31 @@ class TelaLogoActivity : ComponentActivity() {
         }
     }
 }
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun TelaLogo(toHome: () -> Unit) {
+fun TelaLogo(
+    toHome: () -> Unit,
 
-    val context = LocalContext.current
-    val db = remember { AppDatabase.getDatabase(context) }
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val db = getDatabase(LocalContext.current)
     val pinsDao = db.pinsDAO()
 
     LaunchedEffect(Unit) {
-        val pins = pinsDao.buscarTodos()
-        /*if(pins.isEmpty()){
-            CoroutineScope(Dispatchers.IO).launch{
-                pinsDao.insertPins(pinIniciais())
+        if(uiState.listaDePins.isEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                pinsDao.insertPins(pinIniciais)
+                Log.d("opa", "inseriu pins iniciais")
             }
-        }*/
+        }
+        //db.mensagensDAO().buscarTodos().collect()
 
-        db.mensagensDAO().buscarTodos()
         delay(1.seconds)
-
         toHome()
     }
 
@@ -110,7 +126,6 @@ fun TelaLogo(toHome: () -> Unit) {
         }
     )
 }
-fun pinIniciais(): List<Pin> {
     val pinIniciais = listOf(
         Pin(
             image = R.drawable.pin1.toString(),
@@ -553,5 +568,3 @@ fun pinIniciais(): List<Pin> {
             pinIsSaved = true
         ),
     )
-    return pinIniciais
-}

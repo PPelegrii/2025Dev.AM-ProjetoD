@@ -17,8 +17,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.AccountBox
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,13 +36,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pinlikest.ui.AppNavigation
 import dev.pinlikest.ui.PinImage
-import dev.pinlikest.ui.darLikePin
-import dev.pinlikest.ui.darSavePin
 import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
 import dev.pinlikest.data.local.Pin
 import dev.pinlikest.data.local.botaoAlerta
+import dev.pinlikest.data.repository.PinsRepository
+import dev.pinlikest.ui.PinHomeTemplate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,13 +64,20 @@ fun PinDetails(
     pinNome: String,
     pinCriador: String?,
     pinTopComentario: String?,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
     val db = getDatabase(context)
     val pinsDao = db.pinsDAO()
 
-    val pin by remember { mutableStateOf<Pin?>(null) }
+
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -108,7 +120,7 @@ fun PinDetails(
                         .shadow(25.dp)
                 ) {
                     Text(
-                        text = pinNome,
+                        text = uiState.pinNome,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier
                             .padding(start = 12.dp)
@@ -123,40 +135,39 @@ fun PinDetails(
                         ) {
 
                             IconButton(onClick = {
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    pin?.let { darLikePin(it, pinsDao) }
-                                }
-                                pin?.let {
-                                    botaoAlerta(context,
-                                        if (it.pinIsLiked) "Você curtiu o Pin!"
-                                        else "Você descurtiu o Pin!"
+                                uiState.listaDePins.forEach { pin ->
+                                    viewModel.toggleLike(pin, pinsDao)
+
+                                    val newLiked = !pin.pinIsLiked
+                                    botaoAlerta(
+                                        context,
+                                        if (newLiked) "Você curtiu o Pin!" else "Você descurtiu o Pin!"
                                     )
                                 }
+                            }) {
+                                Icon(
+                                    imageVector = if (uiState.pinIsLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                    contentDescription = ""
+                                )
                                 Log.d("botaoLike", "usuario-clicouCurtirPin")
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.FavoriteBorder,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            IconButton(onClick = {
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    pin?.let { darSavePin(it, pinsDao) }
-                                }
-                                pin?.pinIsLiked?.let {
-                                    botaoAlerta(context,
-                                        if (!it) "Você salvou o Pin em seu perfil!"
-                                        else "Você retirou o Pin do perfil!"
+
+                                IconButton(onClick = {
+                                    uiState.listaDePins.forEach { pin ->
+                                        viewModel.toggleSave(pin, pinsDao)
+
+                                        val newSaved = !pin.pinIsSaved
+                                        botaoAlerta(
+                                            context,
+                                            if (newSaved) "Você salvou o Pin!" else "Você removeu o Pin dos salvos!"
+                                        )
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = if (uiState.pinIsLiked) Icons.Filled.AccountBox else Icons.Outlined.AccountBox,
+                                        contentDescription = ""
                                     )
+                                    Log.d("botaoSave", "usuario-clicouSalvarPin")
                                 }
-                                Log.d("botaoSave", "usuario-clicouSalvarPin")
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.AccountBox,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(20.dp)
-                                )
                             }
                         }
                     }
@@ -170,7 +181,7 @@ fun PinDetails(
                 ) {
                     if (pinCriador != null) {
                         Text(
-                            text = pinCriador,
+                            text = uiState.pinCriador,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .padding(start = 12.dp)
@@ -187,7 +198,7 @@ fun PinDetails(
                 ) {
                     if (pinTopComentario != null) {
                         Text(
-                            text = pinTopComentario,
+                            text = uiState.pinTopComentario,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 //.padding(start = 36.dp)

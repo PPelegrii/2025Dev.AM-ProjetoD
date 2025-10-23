@@ -23,30 +23,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
-import dev.pinlikest.data.local.Mensagem
-import dev.pinlikest.data.local.MensagensDAO
-import dev.pinlikest.data.local.botaoAlerta
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
+import dev.pinlikest.data.repository.MensagensRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,18 +48,14 @@ fun MessagesCreateScreen(
     toHome:() -> Unit,
     toPinCreate:() -> Unit,
     toProfile:() -> Unit,
-    onBack: () -> Boolean
+    onBack: () -> Boolean,
+
+    viewModel: MensagensViewModel = viewModel(
+        factory = MensagensViewModel.MensagensViewModelFactory(
+            MensagensRepository(getDatabase(LocalContext.current).mensagensDAO())
+        )
+    )
 ) {
-    val db = getDatabase(context)
-    val mensagensDao = db.mensagensDAO()
-
-    var mensagens by remember { mutableStateOf(emptyFlow<List<Mensagem>>()) }
-
-    LaunchedEffect(Unit) {
-        mensagens = buscarMensagens(mensagensDao)
-        Log.d("Busca ok", "... $mensagens")
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -161,17 +150,17 @@ fun MessagesCreateScreen(
                     .fillMaxWidth()
                     .padding(paddingValues)
             ) {
-                MessageController(context)
+                MessageController(viewModel, context)
             }
         }
     )
 }
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MessageController(context: Context) {
-    val db = getDatabase(context)
-    val mensagensDao = db.mensagensDAO()
-
+fun MessageController(
+    viewModel: MensagensViewModel,
+    context: Context
+) {
     var messageTitulo by remember { mutableStateOf("") }
     var messageDescricao by remember { mutableStateOf("") }
     var messageRemetente by remember { mutableStateOf("") }
@@ -186,8 +175,9 @@ fun MessageController(context: Context) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
             ) {
                 TextField(
                     value = messageTitulo,
@@ -210,91 +200,29 @@ fun MessageController(context: Context) {
                 TextField(
                     value = messageDestinatario,
                     onValueChange = { messageDestinatario = it },
-                    placeholder = { Text("Destinatario") },
+                    placeholder = { Text("Destinatário") },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Button(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    shape = ShapeDefaults.ExtraSmall,
                     onClick = {
                         if (messageTitulo.isNotBlank() && messageDestinatario.isNotBlank()) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                inserirMensagem(
-                                    context,
-                                    messageTitulo,
-                                    messageDescricao,
-                                    messageRemetente,
-                                    messageDestinatario,
-                                    mensagensDao
-                                )
-                            }
-                            botaoAlerta(context, "Mensagem adicionada :)")
-                            Log.d("sendMessage", "mensagem-adicionada")
-
+                            viewModel.inserirMensagem(
+                                context,
+                                messageTitulo,
+                                messageDescricao,
+                                messageRemetente,
+                                messageDestinatario
+                            )
                             messageTitulo = ""
                             messageDescricao = ""
                             messageRemetente = ""
                             messageDestinatario = ""
                         }
                     }
-                ) { Text("Mandar messagem!") }
+                ) { Text("Mandar mensagem!") }
             }
         }
     }
 }
-suspend fun inserirMensagem(
-    context: Context,
 
-    messageTitulo: String,
-    messageDescricao: String,
-    messageRemetente: String,
-    messageDestinatario: String,
-    mensagensDao: MensagensDAO
-) {
-    try{
-        mensagensDao.inserir(
-            Mensagem(
-                mensagemTitulo = messageTitulo,
-                mensagemDescricao = messageDescricao,
-                mensagemRemetente = messageRemetente,
-                mensagemDestinatario = messageDestinatario
-            )
-        )
-        botaoAlerta(context, "Mensagem adicionada :)")
-    }catch (e: Exception){
-        Log.e("Erro ao adicionar", "Msg: ${e.message}")
-    }
-}
-suspend fun buscarMensagens(mensagensDao: MensagensDAO): Flow<List<Mensagem>> {
-    return try {
-        mensagensDao.buscarTodos()
-    } catch (e: Exception) {
-        Log.e("Erro ao buscar", "${e.message}")
-        emptyFlow()
-    }
-}
-suspend fun deletarMensagem(
-    context: Context,
-
-    id: Int,
-    messageTitulo: String,
-    messageDescricao: String,
-    messageRemetente: String,
-    messageDestinatario: String,
-    mensagensDao: MensagensDAO
-) {
-    try{
-        mensagensDao.deletar(
-            Mensagem(
-                id,
-                messageTitulo,
-                messageDescricao,
-                messageRemetente,
-                messageDestinatario
-            )
-        )
-        botaoAlerta(context, "Mensagem removida :)")
-    }catch (e: Exception){
-        Log.e("Erro ao remover", "Msg: ${e.message}")
-    }
-}

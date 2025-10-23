@@ -3,13 +3,14 @@ package dev.pinlikest.ui
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Person
@@ -28,20 +29,16 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
 import dev.pinlikest.data.local.Pin
-import dev.pinlikest.data.local.PinsDAO
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
+import dev.pinlikest.data.repository.PinsRepository
+import dev.pinlikest.ui.pins.PinsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,13 +48,17 @@ fun PerfilScreen(
     toHome: () -> Unit,
     toPinCreate: () -> Unit,
     toMessages: () -> Unit,
-) {
-    val db = getDatabase(context)
-    val pinsDao = db.pinsDAO()
 
-    var pins by remember { mutableStateOf(emptyFlow<Pin>()) }
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
+        /*
         pins = buscarPinsSalvos(pinsDao) as Flow<Pin>
         Log.d("Busca ok", "... $pins")
         CoroutineScope(Dispatchers.IO).launch {
@@ -67,6 +68,7 @@ fun PerfilScreen(
                 }
             }
         }
+         */
     }
 
     Scaffold(
@@ -113,84 +115,39 @@ fun PerfilScreen(
                         toHome()
                         Log.d("botaoHome", "usuario-clicouHome_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Home,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.Home, "", Modifier.size(30.dp))
                     }
-                    /*IconButton(onClick = {
-                        Log.d("botaoSearch", "usuario-clicouSearch_route")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }*/
                     IconButton(onClick = {
                         toPinCreate()
                         Log.d("botaoCreate/Upload", "usuario-clicouCreate/Upload_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.Add, "", Modifier.size(30.dp))
                     }
                     IconButton(onClick = {
                         toMessages()
                         Log.d("botaoMessages", "usuario-clicouMessages_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MailOutline,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.MailOutline, "", Modifier.size(30.dp))
                     }
                     IconButton(onClick = {
                         Log.d("botaoUserProfile", "usuario-clicouUserProfile_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Filled.AccountCircle,
-                            contentDescription = "",
-                            modifier = Modifier.size(40.dp)
-                        )
+                        Icon(Icons.Filled.AccountCircle, "", Modifier.size(40.dp))
                     }
                 }
             }
         },
         content = { paddingValues ->
+            Text("Seus Pins salvos apareceram abaixo:")
             LazyColumn(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
             ) {
-                item {
-                    Row(
-                        modifier = Modifier.padding(paddingValues),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            Modifier.padding(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("Seus Pins salvos apareceram abaixo:")
-                            /*if (pin.pinIsSaved) {
-                                PinHomeTemplate(context, pin) { pinDetails(pin) }
-                            }*/
-                        }
-                    }
+                items(uiState.listaDePins.filter { it.pinIsSaved }) { pin ->
+                    PinHomeTemplate(context, pin, { pinDetails(pin) })
                 }
             }
         }
     )
-}
-
-suspend fun buscarPinsSalvos(pinsDAO: PinsDAO): Flow<List<Pin>> {
-    return try {
-        pinsDAO.buscarSalvos()
-    } catch (e: Exception) {
-        Log.e("Erro ao buscar", "${e.message}")
-        emptyFlow()
-    }
 }

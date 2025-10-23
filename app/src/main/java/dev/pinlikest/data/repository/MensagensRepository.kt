@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 class MensagensRepository(private val mensagensDao: MensagensDAO) {
 
-    suspend fun buscarTodos(): Flow<List<Mensagem>> = mensagensDao.buscarTodos()
+    fun buscarTodos(): Flow<List<Mensagem>> = mensagensDao.buscarTodos()
 
     suspend fun inserir(mensagem: Mensagem){
         mensagensDao.inserir(mensagem)

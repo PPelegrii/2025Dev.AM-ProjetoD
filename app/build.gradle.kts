@@ -70,4 +70,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // Coleta de StateFlow de forma segura no ciclo de vida do Compose (para o collectAsStateWithLifecycle)
     implementation(libs.androidx.lifecycle.runtime.compose)
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
 }

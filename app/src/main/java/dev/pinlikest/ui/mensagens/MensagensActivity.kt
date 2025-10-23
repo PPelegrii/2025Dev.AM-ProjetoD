@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Email
@@ -33,44 +35,37 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
 import dev.pinlikest.data.local.Mensagem
 import dev.pinlikest.data.local.botaoAlerta
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
+import dev.pinlikest.data.repository.MensagensRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessagesScreen(
-    context: Context,
     toHome:() -> Unit,
     toPinCreate:() -> Unit,
     toMessageCreate:() -> Unit,
     toProfile:() -> Unit,
-    onClickMessageDetails: (Mensagem) -> Unit
+    onClickMessageDetails: (Mensagem) -> Unit,
+
+    viewModel: MensagensViewModel = viewModel(
+        factory = MensagensViewModel.MensagensViewModelFactory(
+            MensagensRepository(getDatabase(LocalContext.current).mensagensDAO())
+        )
+    )
 ) {
-    val dbcontext = LocalContext.current
-    val db = getDatabase(dbcontext)
-    val mensagensDao = db.mensagensDAO()
+    val context = LocalContext.current
 
-    var mensagens by remember { mutableStateOf(emptyFlow<List<Mensagem>>()) }
-
-    LaunchedEffect(Unit) {
-        mensagens = buscarMensagens(mensagensDao)
-        Log.d("Busca ok", "... $mensagens")
-    }
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -91,10 +86,7 @@ fun MessagesScreen(
                                 toMessageCreate()
                                 Log.d("botaoCreateMessage", "usuario-clicouCreateMessage")
                             }) {
-                            Icon(
-                                imageVector = Icons.Default.Create,
-                                contentDescription = "",
-                                modifier = Modifier.size(40.dp)
+                            Icon(Icons.Default.Create,"",Modifier.size(40.dp)
                             )
                         }
                     }
@@ -117,44 +109,23 @@ fun MessagesScreen(
                         toHome()
                         Log.d("botaoHome", "usuario-clicouHome_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Home,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
+                        Icon(Icons.Outlined.Home, "", Modifier.size(30.dp)
                         )
                     }
-                    /*IconButton(onClick = {
-                        Log.d("botaoSearch", "usuario-clicouSearch_route")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }*/
                     IconButton(onClick = {
                         toPinCreate()
                         Log.d("botaoCreate/Upload", "usuario-clicouCreate/Upload_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
+                        Icon(Icons.Outlined.Add, "", Modifier.size(30.dp)
                         )
                     }
-                    Icon(
-                        imageVector = Icons.Filled.Email,
-                        contentDescription = "",
-                        modifier = Modifier.size(40.dp)
+                    Icon(Icons.Filled.Email, "", Modifier.size(40.dp)
                     )
                     IconButton(onClick = {
                         toProfile()
                         Log.d("botaoUserProfile", "usuario-clicouUserProfile_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
+                        Icon(Icons.Outlined.AccountCircle, "", Modifier.size(30.dp)
                         )
                     }
                 }
@@ -163,24 +134,20 @@ fun MessagesScreen(
         content = { paddingValues ->
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item {
-                    Column(
-                        Modifier
-                            .padding(4.dp),
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        /*mensagens.forEach { mensagem ->
-                            MensagemTemplate(context, mensagem) {
-                                onClickMessageDetails(mensagem)
-                        }*/
-                         //   Log.d("mensagem", "$mensagem")
+                items(uiState.listaDeMensagens) { mensagem ->
+                    MensagemTemplate(
+                        context = context,
+                        mensagem = mensagem,
+                        onClickMessage = { onClickMessageDetails(mensagem) },
+                        onDeleteMessage = { viewModel.deletarMensagem(mensagem, context)
                         }
-                    }
+                    )
                 }
-            //}
+            }
         }
     )
 }
@@ -189,71 +156,37 @@ fun MessagesScreen(
 fun MensagemTemplate(
     context: Context,
     mensagem: Mensagem,
-    onClickMessage: () -> Unit
+    onClickMessage: () -> Unit,
+    onDeleteMessage: () -> Unit
 ) {
-    val db = getDatabase(context)
-    val mensagensDao = db.mensagensDAO()
-
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         shape = ShapeDefaults.ExtraLarge,
         modifier = Modifier
-            .padding(top = 2.dp)
+            .padding(4.dp)
             .fillMaxWidth()
             .combinedClickable(
-                onClick = {
-                    onClickMessage()
-                    Log.d("usuarioGetMensagem", "usuarioClicouMensagem")
-                },
+                onClick = onClickMessage,
                 onLongClick = {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        deletarMensagem(
-                            context,
-                            mensagem.id,
-                            mensagem.mensagemTitulo,
-                            mensagem.mensagemDescricao,
-                            mensagem.mensagemRemetente,
-                            mensagem.mensagemDestinatario,
-                            mensagensDao
-                        )
-                    }
+                    onDeleteMessage()
                     botaoAlerta(context, "Mensagem removida :(")
-                    Log.d("usuarioLongPressMensagem", "usuarioPressionouMensagem")
                 }
             )
     ) {
         Column(
             verticalArrangement = Arrangement.SpaceEvenly,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .padding(2.dp)
-                .fillMaxWidth()
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier.padding(8.dp)
         ) {
-            Row (
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier
-                    .padding(2.dp)
-                    .fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "Titulo: " + mensagem.mensagemTitulo,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "De: " + mensagem.mensagemRemetente,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Titulo: ${mensagem.mensagemTitulo}", fontWeight = FontWeight.ExtraBold)
+                Text("De: ${mensagem.mensagemRemetente}", fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Descrição: " + mensagem.mensagemDescricao,
-                    fontWeight = FontWeight.Normal
-                )
-            }
+            Text("Descrição: ${mensagem.mensagemDescricao}", fontWeight = FontWeight.Normal)
         }
-    Spacer(modifier = Modifier.height(8.dp))
+    }
 }
