@@ -1,15 +1,15 @@
-package dev.AM.pinlikest.ui.pins
+package dev.pinlikest.ui.pins
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.currentRecomposeScope
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.room.PrimaryKey
-import dev.AM.pinlikest.data.local.Pin
-import dev.AM.pinlikest.data.local.PinsDAO
-import dev.AM.pinlikest.data.repository.PinsRepository
 import dev.pinlikest.R
+import dev.pinlikest.data.local.Pin
+import dev.pinlikest.data.local.PinsDAO
+import dev.pinlikest.data.repository.PinsRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,18 +29,21 @@ data class PinUiState(
     val pinIsSaved: Boolean = false
 )
 class PinsViewModel(private val repository: PinsRepository) : ViewModel() {
+
     private val _uiState = MutableStateFlow(PinUiState())
-    val uiState: StateFlow<PinUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<PinUiState> = _uiState
 
     init {
         viewModelScope.launch {
-            repository.buscarTodos().collect() { pins ->
+            repository.buscarTodos().collect { pins ->
                 _uiState.update { currentState ->
                     currentState.copy(listaDePins = pins)
                 }
             }
         }
     }
+
+
 
     suspend fun darLikePin(pin: Pin, pinsDao: PinsDAO) {
         val updatedPin = pin.copy(pinIsLiked = !pin.pinIsLiked)
@@ -75,20 +78,26 @@ class PinsViewModel(private val repository: PinsRepository) : ViewModel() {
             Log.e("Erro ao adicionar", "Msg: ${e.message}")
         }
     }
-    suspend fun buscarPins(pinsDao: PinsDAO): Flow<List<Pin>> {
-        return try {
-            pinsDao.buscarTodos()
+    suspend fun buscarPins(){
+        try {
+            viewModelScope.launch {
+                repository.buscarTodos().collect { pins ->
+                    _uiState.update { it.copy(listaDePins = pins) }
+                }
+            }
         } catch (e: Exception) {
             Log.e("Erro ao buscar", "${e.message}")
-            emptyFlow()
         }
     }
-    suspend fun buscarPinsSalvos(pinsDAO: PinsDAO): Flow<List<Pin>> {
-        return try {
-            pinsDAO.buscarSalvos()
+    suspend fun buscarPinsSalvos(){
+        try {
+            viewModelScope.launch {
+                repository.buscarTodos().collect { pins ->
+                    _uiState.update { it.copy(listaDePins = pins) }
+                }
+            }
         } catch (e: Exception) {
             Log.e("Erro ao buscar", "${e.message}")
-            emptyFlow()
         }
     }
     suspend fun deletarPin(
@@ -561,6 +570,15 @@ class PinsViewModel(private val repository: PinsRepository) : ViewModel() {
             ),
         )
         return pinIniciais
+    }
+    class PinsViewModelFactory(private val repository: PinsRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(PinsViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return PinsViewModel(repository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
     }
 
 }

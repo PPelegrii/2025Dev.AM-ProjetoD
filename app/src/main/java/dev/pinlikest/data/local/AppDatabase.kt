@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.data.local
+package dev.pinlikest.data.local
 
 import android.content.Context
 import android.widget.Toast

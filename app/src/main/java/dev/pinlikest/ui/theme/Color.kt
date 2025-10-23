@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui.theme
+package dev.pinlikest.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

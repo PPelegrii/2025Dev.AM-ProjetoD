@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui
+package dev.pinlikest.ui
 
 import android.os.Bundle
 import android.util.Log
@@ -26,14 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import dev.AM.pinlikest.data.local.AppDatabase
-import dev.AM.pinlikest.data.local.Pin
-import dev.AM.pinlikest.ui.theme.Typography
 import dev.pinlikest.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import dev.pinlikest.data.local.AppDatabase
+import dev.pinlikest.data.local.Pin
+import dev.pinlikest.ui.theme.Typography
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 class TelaLogoActivity : ComponentActivity() {

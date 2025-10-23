@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.data.local
+package dev.pinlikest.data.local
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -15,13 +15,13 @@ interface PinsDAO{
     suspend fun inserir(pin: Pin)
 
     @Query("SELECT * FROM pins")
-    suspend fun buscarTodos() : Flow<List<Pin>>
+    fun buscarTodos() : Flow<List<Pin>>
 
     @Query("SELECT * FROM pins WHERE id = :id")
     suspend fun buscarPorId(id: Int): Pin
 
     @Query("SELECT * FROM pins WHERE pinIsSaved = 1")
-    suspend fun buscarSalvos() : Flow<List<Pin>>
+    fun buscarSalvos() : Flow<List<Pin>>
 
     @Delete
     suspend fun deletar(pin: Pin)

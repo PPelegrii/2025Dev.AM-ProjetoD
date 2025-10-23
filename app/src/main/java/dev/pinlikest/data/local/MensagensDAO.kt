@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.data.local
+package dev.pinlikest.data.local
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -14,7 +14,7 @@ interface MensagensDAO{
     suspend fun inserir(mensagem: Mensagem)
 
     @Query("SELECT * FROM mensagens")
-    suspend fun buscarTodos() : Flow<List<Mensagem>>
+    fun buscarTodos() : Flow<List<Mensagem>>
 
     @Delete
     suspend fun deletar(mensagem: Mensagem)

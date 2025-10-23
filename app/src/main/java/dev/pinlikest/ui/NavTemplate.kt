@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui
+package dev.pinlikest.ui
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -99,6 +99,6 @@ bottomBar = {
         }
     }
 },
-content = { paddingValues -> NavTemplate(toHome, toPinCreate, toMessages, toProfile)}
+content = { paddingValues -> NavTemplate(toHome, toPinCreate, toMessages, toProfile) }
 )
 }

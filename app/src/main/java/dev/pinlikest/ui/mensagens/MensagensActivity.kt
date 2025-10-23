@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui.mensagens
+package dev.pinlikest.ui.mensagens
 
 import android.content.Context
 import android.util.Log
@@ -43,14 +43,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
-import dev.AM.pinlikest.data.local.Mensagem
-import dev.AM.pinlikest.data.local.Pin
-import dev.AM.pinlikest.data.local.botaoAlerta
+import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.pinlikest.data.local.Mensagem
+import dev.pinlikest.data.local.botaoAlerta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

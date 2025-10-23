@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui.mensagens
+package dev.pinlikest.ui.mensagens
 
 import android.content.Context
 import android.util.Log
@@ -14,9 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
-import dev.AM.pinlikest.data.local.Mensagem
-import dev.AM.pinlikest.data.local.botaoAlerta
+import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.pinlikest.data.local.Mensagem
+import dev.pinlikest.data.local.botaoAlerta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,10 +35,10 @@ fun MensagemDetailsScreen(
     val db = getDatabase(context)
     val mensagensDao = db.mensagensDAO()
 
-    var titulo by remember { mutableStateOf(mensagem.mensagemTitulo ?: "") }
-    var descricao by remember { mutableStateOf(mensagem.mensagemDescricao ?: "") }
-    var remetente by remember { mutableStateOf(mensagem.mensagemRemetente ?: "") }
-    var destinatario by remember { mutableStateOf(mensagem.mensagemDestinatario ?: "") }
+    var titulo by remember { mutableStateOf(mensagem?.mensagemTitulo ?: "") }
+    var descricao by remember { mutableStateOf(mensagem?.mensagemDescricao ?: "") }
+    var remetente by remember { mutableStateOf(mensagem?.mensagemRemetente ?: "") }
+    var destinatario by remember { mutableStateOf(mensagem?.mensagemDestinatario ?: "") }
 
     Scaffold(
         topBar = {

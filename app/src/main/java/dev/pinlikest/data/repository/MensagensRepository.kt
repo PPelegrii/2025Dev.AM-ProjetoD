@@ -1,14 +1,7 @@
-package dev.AM.pinlikest.data.repository
+package dev.pinlikest.data.repository
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Update
-import dev.AM.pinlikest.data.local.Mensagem
-import dev.AM.pinlikest.data.local.MensagensDAO
-import dev.AM.pinlikest.data.local.Pin
-import dev.AM.pinlikest.data.local.PinsDAO
+import dev.pinlikest.data.local.Mensagem
+import dev.pinlikest.data.local.MensagensDAO
 import kotlinx.coroutines.flow.Flow
 
 class MensagensRepository(private val mensagensDao: MensagensDAO) {

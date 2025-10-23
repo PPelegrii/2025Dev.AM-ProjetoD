@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui.pins
+package dev.pinlikest.ui.pins
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -51,15 +51,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.pinlikest.data.local.AppDatabase
+import dev.pinlikest.ui.AppNavigation
+import dev.pinlikest.ui.PinImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
-import dev.AM.pinlikest.data.local.Pin
-import dev.AM.pinlikest.data.local.PinsDAO
-import dev.AM.pinlikest.data.local.botaoAlerta
-import dev.AM.pinlikest.ui.AppNavigation
-import dev.AM.pinlikest.ui.PinImage
+import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.pinlikest.data.local.Pin
+import dev.pinlikest.data.local.PinsDAO
+import dev.pinlikest.data.local.botaoAlerta
+import dev.pinlikest.data.repository.PinsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -85,18 +89,27 @@ fun PinCreate(
     toProfile: () -> Unit,
 
     onPickImage: () -> Unit,
-    imageUri: String?
-) {
-    val dbcontext = LocalContext.current
-    val db = getDatabase(dbcontext)
-    val pinsDao = db.pinsDAO()
+    imageUri: String?,
 
-    var pins by remember { mutableStateOf(emptyFlow<List<Pin>>()) }
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
+
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        pins = buscarPins(pinsDao)
-        Log.d("Busca ok", "... $pins")
+        viewModel.buscarPins()
+        Log.d("Busca ok", "Busca ok")
     }
+    /*
+    val dbcontext = LocalContext.current
+    val db = getDatabase(dbcontext)
+
+    var pins by remember { mutableStateOf(emptyFlow<List<Pin>>()) }
+    */
 
     Scaffold(
         topBar = {

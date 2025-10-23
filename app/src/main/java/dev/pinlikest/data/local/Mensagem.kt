@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.data.local
+package dev.pinlikest.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

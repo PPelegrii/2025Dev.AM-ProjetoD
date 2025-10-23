@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui
+package dev.pinlikest.ui
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,13 +15,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import dev.AM.pinlikest.data.local.AppDatabase
-import dev.AM.pinlikest.data.local.Mensagem
-import dev.AM.pinlikest.ui.mensagens.MensagemDetailsScreen
-import dev.AM.pinlikest.ui.mensagens.MessagesCreateScreen
-import dev.AM.pinlikest.ui.mensagens.MessagesScreen
-import dev.AM.pinlikest.ui.pins.PinCreate
-import dev.AM.pinlikest.ui.pins.PinDetails
+import dev.pinlikest.MainActivity
+import dev.pinlikest.data.local.AppDatabase
+import dev.pinlikest.data.local.Mensagem
+import dev.pinlikest.ui.mensagens.MensagemDetailsScreen
+import dev.pinlikest.ui.mensagens.MessagesCreateScreen
+import dev.pinlikest.ui.mensagens.MessagesScreen
+import dev.pinlikest.ui.pins.PinCreate
+import dev.pinlikest.ui.pins.PinDetails
 
 @Composable
 fun AppNavigation() {
@@ -29,6 +30,9 @@ fun AppNavigation() {
 
     NavHost(navController, startDestination = "TelaLogo") {
 
+        composable("MainActivity") {
+            MainActivity()
+        }
         composable("TelaLogo") {
             TelaLogo(
                 toHome = { navController.navigate("HomeScreen") }

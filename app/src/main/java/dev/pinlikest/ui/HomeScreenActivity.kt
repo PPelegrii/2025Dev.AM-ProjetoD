@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui
+package dev.pinlikest.ui
 
 import android.R
 import android.content.Context
@@ -16,11 +16,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -30,6 +34,7 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.MailOutline
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -44,6 +49,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,15 +59,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import dev.AM.pinlikest.data.local.AppDatabase.Companion.getDatabase
-import dev.AM.pinlikest.data.local.Pin
-import dev.AM.pinlikest.data.local.PinsDAO
-import dev.AM.pinlikest.data.local.botaoAlerta
-import dev.AM.pinlikest.ui.pins.buscarPins
+import dev.pinlikest.data.local.AppDatabase.Companion.getDatabase
+import dev.pinlikest.data.local.Pin
+import dev.pinlikest.data.local.PinsDAO
+import dev.pinlikest.data.local.botaoAlerta
+import dev.pinlikest.ui.pins.PinsViewModel
+import dev.pinlikest.ui.pins.buscarPins
 import kotlinx.coroutines.flow.emptyFlow
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.pinlikest.data.repository.PinsRepository
 
 class HomeScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,17 +90,16 @@ fun HomeScreen(
 
     toPinCreate: () -> Unit,
     toMessages: () -> Unit,
-    toProfile: () -> Unit
+    toProfile: () -> Unit,
+
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
 ) {
-    val db = getDatabase(context)
-    val pinsDao = db.pinsDAO()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var pins by remember { mutableStateOf(emptyFlow<List<Pin>>()) }
-
-    LaunchedEffect(Unit) {
-        pins = buscarPins(pinsDao)
-        Log.d("Busca ok", "... $pins")
-    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -113,59 +122,45 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Home,
-                        contentDescription = "",
-                        modifier = Modifier.size(40.dp)
-                    )
-                    /*IconButton(onClick = {
-                        Log.d("botaoSearch", "usuario-clicouSearch_route")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }*/
+                    Icon(Icons.Filled.Home, "", Modifier.size(40.dp))
                     IconButton(onClick = {
                         toPinCreate()
                         Log.d("botaoCreate/Upload", "usuario-clicouCreate/Upload_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.Add, "", Modifier.size(30.dp))
                     }
                     IconButton(onClick = {
                         toMessages()
                         Log.d("botaoMessages", "usuario-clicouMessages_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MailOutline,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.MailOutline, "", Modifier.size(30.dp))
                     }
                     IconButton(onClick = {
                         toProfile()
                         Log.d("botaoUserProfile", "usuario-clicouUserProfile_route")
                     }) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = "",
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Outlined.AccountCircle, "", Modifier.size(30.dp))
                     }
                 }
             }
         },
         content = { paddingValues ->
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                items(uiState.listaDePins) { pin ->
+                    PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
+                }
+            }
+        }
+    )
+}
+                /*
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -176,10 +171,10 @@ fun HomeScreen(
                                 .padding(4.dp),
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            /*pins.filterIndexed { index, _ -> index % 2 == 0 }
-                                .forEach { pin ->
-                                    PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
-                                }*/
+                            uiState.listaDePins.filterIndexed { index, _ -> index % 2 == 0 }
+                            uiState.listaDePins.forEach { pin ->
+                                PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
+                            }
                         }
                         Column(
                             Modifier
@@ -187,64 +182,54 @@ fun HomeScreen(
                                 .padding(4.dp),
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            /*pins.filterIndexed { index, _ -> index % 2 != 0 }
-                                .forEach { pin ->
-                                    PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
-                                }*/
+                            uiState.listaDePins.filterIndexed { index, _ -> index % 2 != 0 }
+                            uiState.listaDePins.forEach { pin ->
+                                PinHomeTemplate(context, pin) { onClickPinDetails(pin) }
+                            }
                         }
                     }
                 }
             }
         }
     )
-}
-
+}*/
 @Composable
 fun PinHomeTemplate(
     context: Context,
     pin: Pin,
-    onClickPinDetails: () -> Unit
+    onClickPinDetails: () -> Unit,
+
+    viewModel: PinsViewModel = viewModel(
+        factory = PinsViewModel.PinsViewModelFactory(
+            PinsRepository(getDatabase(LocalContext.current).pinsDAO())
+        )
+    )
 ) {
     val db = getDatabase(context)
     val pinsDao = db.pinsDAO()
 
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = ShapeDefaults.ExtraSmall,
         modifier = Modifier
             .fillMaxWidth()
-            .border(BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceVariant))
-            .clickable {
-                onClickPinDetails()
-                Log.d("usuarioGetPinDetails", "usuarioClicouPin")
-            }
+            .clickable { onClickPinDetails() }
     ) {
-        PinImage(
-            pinImage = pin.image,
-            modifier = Modifier.fillMaxWidth()
-        )
+        PinImage(pinImage = pin.image)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier
-                .padding(2.dp)
-                .fillMaxWidth()
-                .height(24.dp)
+            modifier = Modifier.padding(2.dp)
         ) {
             Text(pin.pinNome)
             IconButton(
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
-                        darLikePin(pin, pinsDao)
+                        viewModel.darLikePin(pin, pinsDao)
                     }
-                    botaoAlerta(context,
-                        if (!pin.pinIsLiked) "Você curtiu o Pin!"
-                        else "Você descurtiu o Pin!"
-                    )
-                    Log.d("ButaoLikePin", "UserLikePinButton")
-                }) {
+                    botaoAlerta(context, "Você curtiu/descurtiu o Pin!")
+                }
+            ) {
                 Icon(
                     imageVector = if (pin.pinIsLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = ""
@@ -253,53 +238,31 @@ fun PinHomeTemplate(
             IconButton(
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
-                        darSavePin(pin, pinsDao)
+                        viewModel.darSavePin(pin, pinsDao)
                     }
-                    botaoAlerta(context,
-                        if (!pin.pinIsLiked) "Você salvou o Pin em seu perfil!"
-                        else "Você retirou o Pin do perfil!"
-                    )
-                    Log.d("ButaoSavePin", "UserSavePinButton")
-                }) {
+                    botaoAlerta(context, "Pin salvo/desmarcado!")
+                }
+            ) {
                 Icon(
-                    imageVector = if (pin.pinIsSaved) Icons.Filled.Star else Icons.Outlined.AccountBox,
+                    imageVector = if (pin.pinIsSaved) Icons.Filled.Star else Icons.Outlined.Star,
                     contentDescription = ""
                 )
             }
         }
     }
-    Spacer(modifier = Modifier.height(8.dp))
 }
 
 @Composable
 fun PinImage(pinImage: String?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-
     val painter = when {
-        pinImage?.startsWith("content://") == true ||
-                pinImage?.startsWith("file://") == true ||
-                pinImage?.startsWith("http") == true -> {
-                return
-                }
+        pinImage?.startsWith("content://") == true || pinImage?.startsWith("file://") == true || pinImage?.startsWith("http") == true -> {
+            painterResource(id = pinImage.toInt())
+        }
         else -> {
             val resId = context.resources.getIdentifier(pinImage, "drawable", context.packageName)
-            if (resId != 0) painterResource(id = resId)
-            else painterResource(R.drawable.ic_menu_report_image)
+            if (resId != 0) painterResource(id = resId) else painterResource(R.drawable.ic_menu_report_image)
         }
     }
-    Image(
-        painter = painter,
-        contentDescription = null,
-        modifier = modifier,
-    )
-}
-
-suspend fun darLikePin(pin: Pin, pinsDao: PinsDAO) {
-    val updatedPin = pin.copy(pinIsLiked = !pin.pinIsLiked)
-    pinsDao.atualizar(updatedPin)
-}
-
-suspend fun darSavePin(pin: Pin, pinsDao: PinsDAO) {
-    val updatedPin = pin.copy(pinIsSaved = !pin.pinIsSaved)
-    pinsDao.atualizar(updatedPin)
+    Image(painter = painter, contentDescription = null, modifier = modifier)
 }

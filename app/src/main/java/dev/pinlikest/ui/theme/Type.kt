@@ -1,4 +1,4 @@
-package dev.AM.pinlikest.ui.theme
+package dev.pinlikest.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
